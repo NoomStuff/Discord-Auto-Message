@@ -2,28 +2,13 @@
 
 This Python script enables automated messaging in a Discord channel, enhancing the experience by sending messages from a chat dataset to mimic human-like behavior.
 
-## Installation
-
-### Local Machine
-
-1. Clone the repository or download the code as a zip file and extract it to a folder.
-2. Navigate to the project directory in your terminal:
-
-    ```
-    cd /Downloads/Discord-Auto-message/
-    ```
-
-3. (Optional) Customize the message content by editing **messages.txt**, adding messages on separate lines. By default, random messages are provided.
-
 ## Usage
 
-Execute the script using the following command:
+Download and unzip the folder containing the script.
 
-```
-python auto.py
-```
-
-During execution, you'll be prompted to specify the duration in seconds between each message and the sleep interval after each cycle.
+Open the script and you should be prompted enter your discord token, **make sure you do not give this token to anyone else** as it can get you hacked if it's in the wrong hands.
+[Here is how to get your Discord token](https://www.youtube.com/watch?v=7J38Uy5Y4vA).
+Next, get the Discord channel ID from the URL. After entering the program will close,
 
 ## Options
 
@@ -32,21 +17,21 @@ The script offers the following options:
 `--config`: Configure user information by providing user ID, Discord token, Discord channel URL, and Discord channel ID:
 
 ```
-python auto.py --config
+python automessage.py --config
 ```
 
 `--setC`: Set the channel for message delivery by providing the Discord channel URL and channel ID:
 
 ```
-python auto.py --setC
+python automessage.py --setC
 ```
 
 `--help`: Display help information for the script and its available options:
 
 ```
-python auto.py --help
+python automessage.py --help
 ```
 
-## Contributing
+## Credit
 
-If you encounter bugs or have feature requests, please create an issue on GitHub. Pull requests are also appreciated. Don't forget to star this project if you find it useful!
+The original project was made by xRiddin, make sure to check them out too! And feel free to make an
