@@ -34,4 +34,4 @@ python automessage.py --help
 
 ## Credit
 
-The original project was made by xRiddin, make sure to check them out too! And feel free to make an
+The original project was made by xRiddin, make sure to check them out too! And feel free to fork or make a PR if you manage to improve the script.
