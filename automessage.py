@@ -15,127 +15,132 @@ def get_timestamp():
 
 def random_sleep(duration, min_random, max_random):
     sleep_duration = max(round((duration + random.uniform(min_random, max_random)) * 10) / 10, 0)
-    print(f"{get_timestamp()} `-> Sleeping for {sleep_duration} seconds")
+    print(f"{get_timestamp()} Waiting {sleep_duration} seconds")
     time.sleep(sleep_duration)
 
 
 def read_config():
     try:
-        with open(CONFIG_FILE, "r") as file:
-            return file.read().splitlines()
-    except FileNotFoundError:
-        print(f"{get_timestamp()} config file not found.")
-        return None
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+            token = lines[0].strip()
+            channel = lines[1].strip()
+            return token, channel
+    except Exception as error:
+        if not isinstance(error, FileNotFoundError):
+            print(f"{get_timestamp()} Error reading config: {error}")
+    return None, None
 
 
-def write_config(token, channel_id):
+def write_config(token, channel):
     try:
-        with open(CONFIG_FILE, "w") as file:
-            file.write(f"{token}\n{channel_id}")
-    except Exception as e:
-        print(f"{get_timestamp()} Error writing config: {e}")
-        exit()
+        with open(CONFIG_FILE, "w", encoding="utf-8") as file:
+            file.write(f"{token}\n{channel}")
+    except Exception as error:
+        print(f"{get_timestamp()} Error writing config: {error}")
+        input("Press Enter to exit...")
+        sys.exit()
 
 
-def configure_config():
+def configure():
     try:
         token = input("Discord token: ")
-        channel_id = input("Discord channel ID: ")
-        write_config(token, channel_id)
-        print("Written config to config.txt, please rerun to start!")
-    except Exception as e:
-        print(f"{get_timestamp()} Error configuring: {e}")
-        exit()
+        channel = input("Discord channel ID: ")
+        write_config(token, channel)
+        print("\nWritten config to config.txt. Continuing with new configuration...\n\n")
+        return token, channel
+    except Exception as error:
+        print(f"{get_timestamp()} Error configuring: {error}")
+        input("Press Enter to exit...")
+        sys.exit()
 
 
 def set_channel():
     config = read_config()
     if config:
-        token = config[0]
-        channel_id = input("Discord channel ID: ")
-        write_config(token, channel_id)
-        print("Written config to config.txt, please rerun to start!")
-
+        try:
+            token = config[0]
+            channel = input("Discord channel ID: ")
+            write_config(token, channel)
+            print("\nWritten config to config.txt. Continuing with new configuration...\n\n")
+            return token, channel
+        except Exception as error:
+            print(f"{get_timestamp()} Error setting channel: {error}")
+            input("Press Enter to exit...")
+            sys.exit()
+    else:
+        print("No existing config found. Please run the configuration setup first.")
+        input("Press Enter to exit...")
+        sys.exit()
 
 def show_help():
-    print("Showing help for discord-auto-messenger")
     print("Usage:")
-    print("  'python3 automessage.py'               :  Runs the automessenger. Type in the settings and take a back seat.")
-    print("  'python3 automessage.py --config'      :  Configure settings.")
-    print("  'python3 automessage.py --setC'        :  Set channel to send messages to.")
-    print("  'python3 automessage.py --help'        :  Show help")
+    print("  'python automessage.py'               :  Runs the automessenger. Type in the settings and take a back seat.")
+    print("  'python automessage.py --config'      :  Configure settings.")
+    print("  'python automessage.py --channel'     :  Set channel to send messages to.")
+    print("  'python automessage.py --help'        :  Show help (You just did that lol).\n\n")
 
 
-def send_message(conn, channel_id, message_data, header_data, message, messages_remaining, message_amount):
-    try:
-        conn.request("POST", f"/api/v6/channels/{channel_id}/messages", message_data, header_data)
-        resp = conn.getresponse()
-        body = resp.read().decode()
+def send_message(token, channel, content, messages_remaining, message_amount):
+    payload = json.dumps({"content": content})
+    headers = {"content-type": "application/json", "authorization": token, "host": "discord.com"}
 
-        if 199 < resp.status < 300:
-            # Successful send
-            if messages_remaining >= 0:
-                print(f"{get_timestamp()} Sent message: {message_amount - messages_remaining} of {message_amount} '{message}'")
-            else:
-                print(f"{get_timestamp()} Sent message: '{message}'")
-            return True
-
-        elif resp.status == 429:
-            # Rate limit
-            try:
-                error_data = json.loads(body)
-                retry_after = error_data.get("retry_after", 1)
-            except Exception:
-                retry_after = 1
-            print(f"{get_timestamp()} !! Rate limited. Retrying after {retry_after:.2f} seconds...")
-            time.sleep(retry_after + 0.1)
+    while True:
+        try:
+            connection = HTTPSConnection("discord.com", 443)
+            connection.request("POST", f"/api/v9/channels/{channel}/messages", payload, headers)
+            response = connection.getresponse()
+            body = response.read().decode()
+            connection.close()
+        except Exception as error:
+            print(f"{get_timestamp()} Network error sending message: {error}")
             return False
 
-        else:
-            print(f"{get_timestamp()} !! Failed to send (status {resp.status}): {body}")
-            return True 
+        if response.status == 429:
+            try:
+                retry_after = json.loads(body).get("retry_after", 1)
+            except Exception:
+                retry_after = 1
+            print(f"{get_timestamp()} Rate-limited. Retrying in {retry_after}s")
+            time.sleep(retry_after + 0.05)
+            continue
 
-    except Exception as e:
-        print(f"{get_timestamp()} !! Error sending message: {e} | {message_data}")
-        return True
+        if 199 < response.status < 300:
+            if messages_remaining >= 0:
+                print(f"{get_timestamp()} Sent: {message_amount - messages_remaining} of {message_amount} '{content}'")
+            else:
+                print(f"{get_timestamp()} Sent: '{content}'")
+            return True
+
+        print(f"{get_timestamp()} Failed to send ({response.status}): {body}")
+        return False
 
 
-def get_connection():
-    return HTTPSConnection("discordapp.com", 443)
-
-
-def main():
+def get_arguments():
     if len(sys.argv) > 1:
-        if sys.argv[1] == "--config" and input("Configure? (y/n) ") == "y":
-            configure_config()
-            return
-        elif sys.argv[1] == "--setC" and input("Set channel? (y/n) ") == "y":
+        if sys.argv[1] == "--config":
+            configure()
+        elif sys.argv[1] == "--channel":
             set_channel()
-            return
         elif sys.argv[1] == "--help":
             show_help()
-            return
+            sys.exit()
+            
+def main():
+    get_arguments()
 
     config = read_config()
-    if not config or len(config) != 2:
-        print(f"{get_timestamp()} Invalid or missing config file. Please reconfigure.")
-        configure_config()
-        return
-
-    token, channel_id = config
-
-    header_data = {
-        "content-type": "application/json",
-        "authorization": token,
-        "host": "discordapp.com",
-    }
+    if config is None or not config[0] or not config[1]:
+        print("No config was found. Running configuration setup.")
+        config = configure()
+    token, channel = config
 
     print("-----[  Welcome!  ]-----")
-    print("Please initialise your session delay time, random offset and message amount!")
-    print(f"Messages will be sent to channel: {channel_id}.\n")
+    print("Please set your session delay time, random offset and message amount!")
+    print(f"Messages will be sent to channel: {channel}.\n")
 
-    sleep_time = float(input("Delay (in seconds) between messages: "))
-    random_offset = float(input("Random offset (in seconds) applied to delay: "))
+    sleep_time = float(input("Delay (seconds) between messages: "))
+    random_offset = float(input("Random offset (seconds) applied to delay: "))
     message_amount = int(input("Amount of messages to send before stopping (-1 = send all): "))
     messages_remaining = message_amount
     if message_amount < 0:
@@ -147,32 +152,31 @@ def main():
 
     print("\n\n-----[ Sending... ]-----")
 
+    try:
+        with open(MESSAGES_FILE, "r", encoding="utf-8") as file:
+            messages = file.read().splitlines()
+    except FileNotFoundError:
+        print(f"{get_timestamp()} Messages file not found.")
+        input("Press Enter to exit...")
+        sys.exit()
+    
     while loops_remaining != 0 and messages_remaining != 0:
-        try:
-            with open(MESSAGES_FILE, "r", encoding="utf-8") as file:
-                messages = file.read().splitlines()
-        except FileNotFoundError:
-            print(f"{get_timestamp()} Messages file not found.")
-            return
-
-        loops_remaining -= 1
         for message in messages:
             if messages_remaining != 0:
                 messages_remaining -= 1
-                message_data = json.dumps({"content": message})
-                conn = get_connection()
-                send_message(conn, channel_id, message_data, header_data, message, messages_remaining, message_amount)
-                conn.close()
+                send_message(token, channel, message, messages_remaining, message_amount)
                 random_sleep(sleep_time, -random_offset, random_offset)
-
-    print(f"\n\n{get_timestamp()} -----[    Done!   ]-----")
+        if loops_remaining > 0:
+            loops_remaining -= 1
+            print(f"Finished sending {message_amount} messages! Loops remaining: {loops_remaining}")
+    
     if message_amount > 0:
-        print("Finished sending {message_amount} messages!")
+        print(f"Finished sending {message_amount} messages!")
     elif loop_amount > 1:
-        print("Finished sending {loop_amount} loops of messages!")
+        print(f"Finished sending {loop_amount} loops of messages!")
     else:
         print("Finished sending all messages!")
-    input("\nPress [Enter] to close...")
+    input("Press Enter to exit...")
 
 
 if __name__ == "__main__":

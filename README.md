@@ -2,37 +2,68 @@
 
 This Python script can send messages on your account to any channel you're in. You can also customize the delay, random offset, message amount and optionally the loop amount.
 
-## Usage
+## ⭐ Features
 
-Download and unzip the folder containing the script.
+* Automatically sends messages to a specified Discord channel
+* Customizable sleep time between messages
+* Choose random offset to make message timing less predictable
+* Pick message amount and loop count
+* Handles rate-limits
 
-Open the script and you should be prompted enter your discord token, **make sure you do not give this token to anyone else** as it can get you hacked if it's in the wrong hands.
-[Here is how to get your Discord token](https://www.youtube.com/watch?v=7J38Uy5Y4vA).
+---
 
-Next, get the Discord channel ID from the URL. After entering the program will close, when you reopen it you can enter the delay, random offset, message amount and loop amount.
+## 📦 Setup
 
-## Options
+Download the folder, and run `hardlyknowifier.py`.
+You need Python 3 installed, no extra dependencies.
+
+The first time you run the script, it will ask you for:
+
+1. **Your Discord token**
+2. **A Discord Channel ID**
+3. **Whether to ignore your own messages**
+
+These are stored in `config.txt`. Rerun the script after the file is made.
+
+> **Important:**
+> Your Discord token gives full access to your account.
+> **Do NOT share, upload or commit it anywhere else.**
+> [How to get your Discord token](https://www.youtube.com/watch?v=5SRwnLYdpJs)
+
+## ⚡ Usage
+
+When you run the script, it will give you a short setup:
+
+1. **Sleep Time**: Time to wait between messages (in seconds).
+2. **Random Offset**: Random time added or subtracted from the sleep time (in seconds).
+3. **Message Amount**: Number of messages to send before stopping (-1 to send all).
+4. **Loop Amount**: Number of times to loop through all messages (-1 to never stop).
+
+## ⚙️ Options
 
 The script offers the following options:
 
-`--config`: Configure user information by providing user ID, Discord token, Discord channel URL, and Discord channel ID:
-
+`--config`: Change your settings by setting your Discord token and Discord channel ID:
 ```
 python automessage.py --config
 ```
 
-`--setC`: Set the channel for message delivery by providing the Discord channel URL and channel ID:
-
+`--channel`: Set the channel for that the bot will send messages to:
 ```
-python automessage.py --setC
+python automessage.py --channel
 ```
 
-`--help`: Display help information for the script and its available options:
-
+`--help`: Show argument help information for the script:
 ```
 python automessage.py --help
 ```
 
-## Credit
+## 🙏 Notes
 
-The original project was made by xRiddin, make sure to check them out too! And feel free to fork or make a PR if you manage to improve the script.
+Having a bot using your account is against Discords TOS and not allowed by most servers, so probably keep it to you and some friends, or use at your own risk.
+
+`config.txt` has your Discord token. So be extremely careful when sharing the project folder.
+
+This was originally a fork of [xRiddin/Discord-Auto-message](https://github.com/xRiddin/Discord-Auto-message), make sure to check them out too! And feel free to fork or make a PR if you manage to improve the script.
+
+You are free to use the project however you want *(just try not to annoy people too much lol)*, it would be appreciated if you would provide credit when modifying, redistributing or showcasing my work.
