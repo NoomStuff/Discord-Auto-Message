@@ -168,7 +168,7 @@ def main():
                 random_sleep(sleep_time, -random_offset, random_offset)
         if loops_remaining > 0:
             loops_remaining -= 1
-            print(f"Finished sending {message_amount} messages! Loops remaining: {loops_remaining}")
+            print(f"Loop of {len(messages)} messages. {loops_remaining}/{loop_amount} loops remaining.")
     
     if message_amount > 0:
         print(f"Finished sending {message_amount} messages!")
