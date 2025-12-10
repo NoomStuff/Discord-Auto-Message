@@ -14,9 +14,10 @@ def get_timestamp():
 
 
 def random_sleep(duration, min_random, max_random):
-    sleep_duration = max(round((duration + random.uniform(min_random, max_random)) * 10) / 10, 0)
-    print(f"{get_timestamp()} Waiting {sleep_duration} seconds")
-    time.sleep(sleep_duration)
+    sleep_duration = max(round((duration + random.uniform(min_random, max_random)) * 100) / 100, 0)
+    if sleep_duration > 0:
+        print(f"{get_timestamp()} Waiting {sleep_duration} seconds")
+        time.sleep(sleep_duration)
 
 
 def read_config():
@@ -102,7 +103,7 @@ def send_message(token, channel, content, messages_remaining, message_amount):
             except Exception:
                 retry_after = 1
             print(f"{get_timestamp()} Rate-limited. Retrying in {retry_after}s")
-            time.sleep(retry_after + 0.05)
+            time.sleep(retry_after + random.uniform(0.01, 0.10))
             continue
 
         if 199 < response.status < 300:
@@ -157,6 +158,11 @@ def main():
             messages = file.read().splitlines()
     except FileNotFoundError:
         print(f"{get_timestamp()} Messages file not found.")
+        input("Press Enter to exit...")
+        sys.exit()
+        
+    if not messages:
+        print(f"{get_timestamp()} No messages found in messages.txt, please add some and rerun the script.")
         input("Press Enter to exit...")
         sys.exit()
     
